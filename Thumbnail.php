@@ -9,6 +9,8 @@ use yii\imagine\Image;
 use Imagine\Image\Box;
 use Imagine\Image\ManipulatorInterface;
 use yii\base\Object;
+use Imagine\Image\Color;
+use Imagine\Image\Point;
 
 class Thumbnail extends Object
 {
@@ -18,6 +20,17 @@ class Thumbnail extends Object
     public static $cacheAlias = 'assets/thumbnails';
 
     public static $cacheExpire = 0;
+
+    public static $watermark;
+
+    public static $watermarkConfig = [
+        'fontFile' => 'fonts/OpenSans.ttf',
+        'fontSize' => 16,
+        'fontColor' => '000',
+        'fontAlpha' => 100,
+        'fontAngle' => 0,
+        'fontStart' => [0,0]
+    ];
 
     public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND)
     {
@@ -49,9 +62,26 @@ class Thumbnail extends Object
         }
 
         $box = new Box($width, $height);
-        $image = Image::getImagine()->open($filename);
-        $image = $image->thumbnail($box, $mode);
-
+        $imagine = Image::getImagine();
+        $image = $imagine->open($filename);
+        $image = $imagine->thumbnail($box, $mode);
+        if (self::$watermark) {
+            $image->draw()->text(
+                self::$watermark,
+                $imagine->font(
+                    self::$watermarkConfig['fontFile'],
+                    self::$watermarkConfig['fontSize'],
+                    new Color(
+                        self::$watermarkConfig['fontColor'],
+                        self::$watermarkConfig['fontAlpha']
+                    )
+                ),
+                new Point(
+                    self::$watermarkConfig['fontStart']
+                ),
+                self::$watermarkConfig['fontAngle']
+            );
+        }
         $image->save($thumbnailFile);
         return $thumbnailFile;
     }
