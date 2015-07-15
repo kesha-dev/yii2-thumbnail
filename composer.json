@@ -1,0 +1,26 @@
+{
+  "name": "aquy/yii2-thumbnail",
+  "description": "Yii2 helper for creating and caching thumbnails on real time",
+  "keywords": ["yii2", "thumbnail", "image", "helper"],
+  "type": "yii2-extension",
+  "license": "MIT",
+  "support": {
+    "source": "https://github.com/aquy/yii2-thumbnail",
+    "issues": "https://github.com/aquy/yii2-thumbnail/issues"
+  },
+  "authors": [
+    {
+	  "name": "aquy",
+      "homepage": "https://github.com/aquy"
+    }
+  ],
+  "require": {
+    "yiisoft/yii2": "*",
+    "yiisoft/yii2-imagine": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "aquy\\thumbnail\\": ""
+    }
+  }
+}
