@@ -5,14 +5,14 @@ namespace aquy\thumbnail;
 use Yii;
 use yii\helpers\Html;
 use yii\helpers\FileHelper;
+use yii\helpers\VarDumper;
 use yii\imagine\Image;
 use Imagine\Image\Box;
 use Imagine\Image\ManipulatorInterface;
-use yii\base\Object;
 use Imagine\Image\Color;
 use Imagine\Image\Point;
 
-class Thumbnail extends Object
+class Thumbnail
 {
     const THUMBNAIL_OUTBOUND = ManipulatorInterface::THUMBNAIL_OUTBOUND;
     const THUMBNAIL_INSET = ManipulatorInterface::THUMBNAIL_INSET;
@@ -24,10 +24,10 @@ class Thumbnail extends Object
     public static $watermark;
 
     public static $watermarkConfig = [
-        'fontFile' => 'fonts/OpenSans.ttf',
+        'fontFile' => '@aquy/thumbnail/fonts/OpenSans.ttf',
         'fontSize' => 16,
-        'fontColor' => '000',
-        'fontAlpha' => 100,
+        'fontColor' => 'ffffff',
+        'fontAlpha' => 50,
         'fontAngle' => 0,
         'fontStart' => [0,0]
     ];
@@ -63,26 +63,31 @@ class Thumbnail extends Object
 
         $box = new Box($width, $height);
         $imagine = Image::getImagine();
-        $image = $imagine->open($filename);
-        $image = $imagine->thumbnail($box, $mode);
+        $image = $imagine->open($filename)->thumbnail($box, $mode);
+        $image->save($thumbnailFile);
         if (self::$watermark) {
+            $point = new Point(
+                self::$watermarkConfig['fontStart'][0],
+                self::$watermarkConfig['fontStart'][1]
+            );
+            $color = new Color(
+                self::$watermarkConfig['fontColor'],
+                self::$watermarkConfig['fontSize']
+            );
+            $font = Image::getImagine()->font(
+                Yii::getAlias(self::$watermarkConfig['fontFile']),
+                Yii::getAlias(self::$watermarkConfig['fontSize']),
+                $color
+            );
+            $image = Image::getImagine()->open($thumbnailFile);
             $image->draw()->text(
                 self::$watermark,
-                $imagine->font(
-                    self::$watermarkConfig['fontFile'],
-                    self::$watermarkConfig['fontSize'],
-                    new Color(
-                        self::$watermarkConfig['fontColor'],
-                        self::$watermarkConfig['fontAlpha']
-                    )
-                ),
-                new Point(
-                    self::$watermarkConfig['fontStart']
-                ),
+                $font,
+                $point,
                 self::$watermarkConfig['fontAngle']
             );
+            $image->save($thumbnailFile);
         }
-        $image->save($thumbnailFile);
         return $thumbnailFile;
     }
 
