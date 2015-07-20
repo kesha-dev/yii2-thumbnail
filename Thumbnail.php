@@ -17,6 +17,10 @@ class Thumbnail
     const THUMBNAIL_OUTBOUND = ManipulatorInterface::THUMBNAIL_OUTBOUND;
     const THUMBNAIL_INSET = ManipulatorInterface::THUMBNAIL_INSET;
 
+    public static $cashBaseAlias = '@webroot';
+
+    public static $cashWebAlias = '@web';
+
     public static $cacheAlias = 'assets/thumbnails';
 
     public static $cacheExpire = 0;
@@ -32,18 +36,18 @@ class Thumbnail
         'fontStart' => [0,0]
     ];
 
-    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND)
+    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
     {
-        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode));
+        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark));
     }
 
-    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND)
+    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
             throw new FileNotFoundException("File $filename doesn't exist");
         }
-        $cachePath = Yii::getAlias('@webroot/' . self::$cacheAlias);
+        $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
 
         $thumbnailFileExt = strrchr($filename, '.');
         $thumbnailFileName = md5($filename . $width . $height . $mode . filemtime($filename));
@@ -65,7 +69,7 @@ class Thumbnail
         $imagine = Image::getImagine();
         $image = $imagine->open($filename)->thumbnail($box, $mode);
         $image->save($thumbnailFile);
-        if (self::$watermark) {
+        if ($isWatermark && self::$watermark) {
             $point = new Point(
                 self::$watermarkConfig['fontStart'][0],
                 self::$watermarkConfig['fontStart'][1]
@@ -91,11 +95,11 @@ class Thumbnail
         return $thumbnailFile;
     }
 
-    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND)
+    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
-        $cacheUrl = Yii::getAlias('@web/' . self::$cacheAlias);
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode);
+        $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
         $fileName = $matches[0];
@@ -103,11 +107,11 @@ class Thumbnail
         return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
     }
 
-    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [])
+    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         try {
-            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode);
+            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark);
         } catch (FileNotFoundException $e) {
             return 'File doesn\'t exist';
         } catch (\Exception $e) {
@@ -123,7 +127,7 @@ class Thumbnail
 
     public static function clearCache()
     {
-        $cacheDir = Yii::getAlias('@webroot/' . self::$cacheAlias);
+        $cacheDir = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
         self::removeDir($cacheDir);
         return @mkdir($cacheDir, 0755, true);
     }

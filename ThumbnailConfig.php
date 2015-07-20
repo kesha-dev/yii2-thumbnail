@@ -7,6 +7,10 @@ use yii\base\Object;
 class ThumbnailConfig extends Object
 {
 
+    public $cashBaseAlias = '@webroot';
+
+    public $cashWebAlias = '@web';
+
     public $cacheAlias = 'assets/thumbnails';
 
     public $cacheExpire = 0;
@@ -27,6 +31,8 @@ class ThumbnailConfig extends Object
 
     public function init()
     {
+        Thumbnail::$cashBaseAlias = $this->cashBaseAlias;
+        Thumbnail::$cashWebAlias = $this->cashWebAlias;
         Thumbnail::$cacheAlias = $this->cacheAlias;
         Thumbnail::$cacheExpire = $this->cacheExpire;
         Thumbnail::$watermark = $this->watermark;
