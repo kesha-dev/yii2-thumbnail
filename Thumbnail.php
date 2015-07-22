@@ -69,28 +69,38 @@ class Thumbnail
         $imagine = Image::getImagine();
         $image = $imagine->open($filename)->thumbnail($box, $mode);
         $image->save($thumbnailFile);
-        if ($isWatermark && self::$watermark) {
-            $point = new Point(
-                self::$watermarkConfig['fontStart'][0],
-                self::$watermarkConfig['fontStart'][1]
-            );
-            $color = new Color(
-                self::$watermarkConfig['fontColor'],
-                self::$watermarkConfig['fontSize']
-            );
-            $font = Image::getImagine()->font(
-                Yii::getAlias(self::$watermarkConfig['fontFile']),
-                Yii::getAlias(self::$watermarkConfig['fontSize']),
-                $color
-            );
-            $image = Image::getImagine()->open($thumbnailFile);
-            $image->draw()->text(
-                self::$watermark,
-                $font,
-                $point,
-                self::$watermarkConfig['fontAngle']
-            );
-            $image->save($thumbnailFile);
+        if ($isWatermark) {
+            if (file_exists(Yii::getAlias(self::$watermark))) {
+                $watermark = Image::getImagine()->open(Yii::getAlias(self::$watermark));
+                $image = Image::getImagine()->open($thumbnailFile);
+                $size = $image->getSize();
+                $wSize = $watermark->getSize();
+                $bottomRight = new Point($size->getWidth() - $wSize->getWidth() - 30, $size->getHeight() - $wSize->getHeight() - 12);
+                $image->paste($watermark, $bottomRight);
+                $image->save($thumbnailFile);
+            } else if (self::$watermark) {
+                $point = new Point(
+                    self::$watermarkConfig['fontStart'][0],
+                    self::$watermarkConfig['fontStart'][1]
+                );
+                $color = new Color(
+                    self::$watermarkConfig['fontColor'],
+                    self::$watermarkConfig['fontSize']
+                );
+                $font = Image::getImagine()->font(
+                    Yii::getAlias(self::$watermarkConfig['fontFile']),
+                    Yii::getAlias(self::$watermarkConfig['fontSize']),
+                    $color
+                );
+                $image = Image::getImagine()->open($thumbnailFile);
+                $image->draw()->text(
+                    self::$watermark,
+                    $font,
+                    $point,
+                    self::$watermarkConfig['fontAngle']
+                );
+                $image->save($thumbnailFile);
+            }
         }
         return $thumbnailFile;
     }
