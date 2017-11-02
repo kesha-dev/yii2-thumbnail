@@ -29,6 +29,10 @@ class ThumbnailConfig extends Object
 
     public $fontStart = [0,0];
 
+    public $quality = 85;
+
+    public $color = ['ffffff', 100];
+
     public function init()
     {
         Thumbnail::$cashBaseAlias = $this->cashBaseAlias;
@@ -44,5 +48,7 @@ class ThumbnailConfig extends Object
             'fontAngle' => $this->fontAngle,
             'fontStart' => $this->fontStart
         ];
+        Thumbnail::$quality = $this->quality;
+        Thumbnail::$color = $this->color;
     }
 }

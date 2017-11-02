@@ -4,18 +4,19 @@ namespace aquy\thumbnail;
 
 use Yii;
 use yii\helpers\Html;
-use yii\helpers\FileHelper;
-use yii\helpers\VarDumper;
 use yii\imagine\Image;
 use Imagine\Image\Box;
-use Imagine\Image\ManipulatorInterface;
 use Imagine\Image\Color;
 use Imagine\Image\Point;
+use yii\helpers\FileHelper;
+use Imagine\Image\Palette\RGB;
+use Imagine\Image\ManipulatorInterface;
 
 class Thumbnail
 {
     const THUMBNAIL_OUTBOUND = ManipulatorInterface::THUMBNAIL_OUTBOUND;
     const THUMBNAIL_INSET = ManipulatorInterface::THUMBNAIL_INSET;
+    const THUMBNAIL_KEEP_ASPECT_RATIO = 'keep_aspect_ratio';
 
     public static $cashBaseAlias = '@webroot';
 
@@ -35,6 +36,10 @@ class Thumbnail
         'fontAngle' => 0,
         'fontStart' => [0,0]
     ];
+
+    public static $quality = 85;
+
+    public static $color = ['ffffff', 100];
 
     public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
     {
@@ -67,8 +72,27 @@ class Thumbnail
 
         $box = new Box($width, $height);
         $imagine = Image::getImagine();
-        $image = $imagine->open($filename)->thumbnail($box, $mode);
-        $image->save($thumbnailFile);
+        $image = $imagine->open($filename);
+        if ($mode == self::THUMBNAIL_KEEP_ASPECT_RATIO) {
+            $image = $image->thumbnail($box, self::THUMBNAIL_INSET);
+            $sizeR = $image->getSize();
+            $widthR = $sizeR->getWidth();
+            $heightR = $sizeR->getHeight();
+            $palette = new RGB();
+            $color = $palette->color(self::$color[0], self::$color[1]);
+            $preserve = $imagine->create($box, $color);
+            $startX = $startY = 0;
+            if ( $widthR < $width ) {
+                $startX = ( $width - $widthR ) / 2;
+            }
+            if ( $heightR < $height ) {
+                $startY = ( $height - $heightR ) / 2;
+            }
+            $image = $preserve->paste($image, new Point($startX, $startY));
+        } else {
+            $image = $image->thumbnail($box, $mode);
+        }
+        $image->save($thumbnailFile, ['quality' => self::$quality]);
         if ($isWatermark) {
             if (file_exists(Yii::getAlias(self::$watermark))) {
                 $watermark = Image::getImagine()->open(Yii::getAlias(self::$watermark));
@@ -77,7 +101,7 @@ class Thumbnail
                 $wSize = $watermark->getSize();
                 $bottomRight = new Point($size->getWidth() - $wSize->getWidth() - 30, $size->getHeight() - $wSize->getHeight() - 12);
                 $image->paste($watermark, $bottomRight);
-                $image->save($thumbnailFile);
+                $image->save($thumbnailFile, ['quality' => 100]);
             } else if (self::$watermark) {
                 $point = new Point(
                     self::$watermarkConfig['fontStart'][0],
@@ -99,7 +123,7 @@ class Thumbnail
                     $point,
                     self::$watermarkConfig['fontAngle']
                 );
-                $image->save($thumbnailFile);
+                $image->save($thumbnailFile, ['quality' => 100]);
             }
         }
         return $thumbnailFile;
