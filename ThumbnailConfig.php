@@ -2,9 +2,9 @@
 
 namespace aquy\thumbnail;
 
-use yii\base\Object;
+use yii\base\BaseObject;
 
-class ThumbnailConfig extends Object
+class ThumbnailConfig extends BaseObject
 {
 
     public $cashBaseAlias = '@webroot';
