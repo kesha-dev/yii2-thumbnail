@@ -41,12 +41,16 @@ class Thumbnail
 
     public static $color = ['ffffff', 100];
 
-    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
+    public static $padding = [30,12];
+
+    public static $position = ['right', 'bottom'];
+
+    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
     {
-        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark));
+        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig));
     }
 
-    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
+    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
@@ -94,12 +98,33 @@ class Thumbnail
         }
         $image->save($thumbnailFile, ['quality' => self::$quality]);
         if ($isWatermark) {
+            if (isset($watermarkConfig['watermark'])) {
+                self::$watermark = $watermarkConfig['watermark'];
+            }
+            if (isset($watermarkConfig['padding'])) {
+                self::$padding = $watermarkConfig['padding'];
+            }
+            if (isset($watermarkConfig['position'])) {
+                self::$position = $watermarkConfig['position'];
+            }
             if (file_exists(Yii::getAlias(self::$watermark))) {
                 $watermark = Image::getImagine()->open(Yii::getAlias(self::$watermark));
                 $image = Image::getImagine()->open($thumbnailFile);
                 $size = $image->getSize();
                 $wSize = $watermark->getSize();
-                $bottomRight = new Point($size->getWidth() - $wSize->getWidth() - 30, $size->getHeight() - $wSize->getHeight() - 12);
+
+                $point = array();
+                if (self::$position[0] == 'right') {
+                    $point[0] = $size->getWidth() - $wSize->getWidth() - self::$padding[0];
+                } else {
+                    $point[0] = self::$padding[0];
+                }
+                if (self::$position[1] == 'bottom') {
+                    $point[1] = $size->getHeight() - $wSize->getHeight() - self::$padding[1];
+                } else {
+                    $point[1] = self::$padding[1];
+                }
+                $bottomRight = new Point($point[0], $point[1]);
                 $image->paste($watermark, $bottomRight);
                 $image->save($thumbnailFile, ['quality' => 100]);
             } else if (self::$watermark) {
@@ -129,11 +154,11 @@ class Thumbnail
         return $thumbnailFile;
     }
 
-    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false)
+    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark);
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
         $fileName = $matches[0];
@@ -141,11 +166,11 @@ class Thumbnail
         return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
     }
 
-    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false)
+    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false, $watermarkConfig = array())
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         try {
-            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark);
+            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
         } catch (FileNotFoundException $e) {
             return 'File doesn\'t exist';
         } catch (\Exception $e) {
