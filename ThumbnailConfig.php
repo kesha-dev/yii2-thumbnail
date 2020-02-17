@@ -31,6 +31,8 @@ class ThumbnailConfig extends BaseObject
 
     public $quality = 85;
 
+    public $webpQuality = 100;
+
     public $color = ['ffffff', 100];
 
     public function init()
@@ -49,6 +51,7 @@ class ThumbnailConfig extends BaseObject
             'fontStart' => $this->fontStart
         ];
         Thumbnail::$quality = $this->quality;
+        Thumbnail::$webpQuality = $this->webpQuality;
         Thumbnail::$color = $this->color;
     }
 }

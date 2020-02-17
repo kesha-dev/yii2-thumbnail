@@ -39,6 +39,8 @@ class Thumbnail
 
     public static $quality = 85;
 
+    public static $webpQuality = 100;
+
     public static $color = ['ffffff', 100];
 
     public static $padding = [30,12];
@@ -167,6 +169,32 @@ class Thumbnail
         return $thumbnailFile;
     }
 
+    public static function thumbnailWebpFile($thumbnailFileUrl)
+    {
+        $thumbnailFilePath = pathinfo($thumbnailFileUrl, PATHINFO_DIRNAME);
+        $thumbnailFileName = pathinfo($thumbnailFileUrl, PATHINFO_FILENAME);
+        $thumbnailFileExt = pathinfo($thumbnailFileUrl, PATHINFO_EXTENSION);
+
+        $thumbnailWebpFile = $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . '.webp';
+
+        if (file_exists($thumbnailWebpFile)) {
+            if (self::$cacheExpire !== 0 && (time() - filemtime($thumbnailWebpFile)) > self::$cacheExpire) {
+                unlink($thumbnailWebpFile);
+            } else {
+                return $thumbnailWebpFile;
+            }
+        }
+
+        if ($thumbnailFileExt == 'png') {
+            $img = imageCreateFromPng($thumbnailFileUrl);
+        } else {
+            $img = imageCreateFromJpeg($thumbnailFileUrl);
+        }
+        imagewebp($img, $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . '.webp', self::$webpQuality);
+        imagedestroy($img);
+        return $thumbnailWebpFile;
+    }
+
     public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
@@ -195,6 +223,20 @@ class Thumbnail
             $thumbnailFileUrl,
             $options
         );
+    }
+
+    public static function thumbnailWebpFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
+    {
+        $filename = FileHelper::normalizePath(Yii::getAlias($filename));
+        $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
+
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
+        $thumbnailWebpFilePath = self::thumbnailWebpFile($thumbnailFilePath);
+
+        preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailWebpFilePath, $matches);
+        $fileName = $matches[0];
+
+        return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
     }
 
     public static function clearCache()
