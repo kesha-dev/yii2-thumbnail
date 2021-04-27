@@ -47,12 +47,12 @@ class Thumbnail
 
     public static $position = ['right', 'bottom'];
 
-    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
+    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
-        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig));
+        return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius));
     }
 
-    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
+    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
@@ -97,6 +97,9 @@ class Thumbnail
             $image = $preserve->paste($image, new Point($startX, $startY));
         } else {
             $image = $image->thumbnail($box, $mode);
+        }
+        if ($blurRadius) {
+            $image->effects()->blur($blurRadius);
         }
         $image->save($thumbnailFile, ['quality' => self::$quality]);
         if ($isWatermark) {
@@ -195,11 +198,11 @@ class Thumbnail
         return $thumbnailWebpFile;
     }
 
-    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
+    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
         $fileName = $matches[0];
@@ -207,11 +210,11 @@ class Thumbnail
         return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
     }
 
-    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false, $watermarkConfig = array())
+    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         try {
-            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
+            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
         } catch (FileNotFoundException $e) {
             return 'File doesn\'t exist';
         } catch (\Exception $e) {
@@ -225,12 +228,12 @@ class Thumbnail
         );
     }
 
-    public static function thumbnailWebpFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array())
+    public static function thumbnailWebpFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
 
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig);
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
         $thumbnailWebpFilePath = self::thumbnailWebpFile($thumbnailFilePath);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailWebpFilePath, $matches);
