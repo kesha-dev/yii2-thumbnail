@@ -61,7 +61,7 @@ class Thumbnail
         $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
 
         $thumbnailFileExt = strrchr($filename, '.');
-        $thumbnailFileName = md5($filename . $width . $height . $mode . filemtime($filename));
+        $thumbnailFileName = md5($filename . $width . $height . $mode . $blurRadius . filemtime($filename));
         $thumbnailFilePath = $cachePath . DIRECTORY_SEPARATOR . substr($thumbnailFileName, 0, 2);
         $thumbnailFile = $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . $thumbnailFileExt;
 
