@@ -47,12 +47,12 @@ class Thumbnail
 
     public static $position = ['right', 'bottom'];
 
-    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
+    public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius));
     }
 
-    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
+    public static function thumbnailFile($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
@@ -60,7 +60,11 @@ class Thumbnail
         }
         $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
 
-        $thumbnailFileExt = strrchr($filename, '.');
+        if ($fileExtension) {
+            $thumbnailFileExt = '.' . $fileExtension;
+        } else {
+            $thumbnailFileExt = strrchr($filename, '.');
+        }
         $thumbnailFileName = md5($filename . $width . $height . $mode . $blurRadius . filemtime($filename));
         $thumbnailFilePath = $cachePath . DIRECTORY_SEPARATOR . substr($thumbnailFileName, 0, 2);
         $thumbnailFile = $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . $thumbnailFileExt;
@@ -72,6 +76,7 @@ class Thumbnail
                 return $thumbnailFile;
             }
         }
+
         if (!is_dir($thumbnailFilePath)) {
             mkdir($thumbnailFilePath, 0755, true);
         }
@@ -198,11 +203,11 @@ class Thumbnail
         return $thumbnailWebpFile;
     }
 
-    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
+    public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, $fileExtension);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
         $fileName = $matches[0];
@@ -210,11 +215,11 @@ class Thumbnail
         return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
     }
 
-    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
+    public static function thumbnailImg($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $options = [], $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         try {
-            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
+            $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, $fileExtension);
         } catch (FileNotFoundException $e) {
             return 'File doesn\'t exist';
         } catch (\Exception $e) {
