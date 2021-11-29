@@ -174,6 +174,11 @@ class Thumbnail
                 $image->save($thumbnailFile, ['quality' => 100]);
             }
         }
+        unset($box);
+        unset($image);
+        unset($point);
+        unset($image);
+        unset($imagine);
         return $thumbnailFile;
     }
 
@@ -192,11 +197,14 @@ class Thumbnail
                 return $thumbnailWebpFile;
             }
         }
-
         if ($thumbnailFileExt == 'png') {
             $img = imageCreateFromPng($thumbnailFileUrl);
+            imagepalettetotruecolor($img);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
         } else {
             $img = imageCreateFromJpeg($thumbnailFileUrl);
+            imagepalettetotruecolor($img);
         }
         imagewebp($img, $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . '.webp', self::$webpQuality);
         imagedestroy($img);
