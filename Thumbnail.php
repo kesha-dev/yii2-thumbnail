@@ -34,7 +34,7 @@ class Thumbnail
         'fontColor' => 'ffffff',
         'fontAlpha' => 50,
         'fontAngle' => 0,
-        'fontStart' => [0,0]
+        'fontStart' => [0, 0]
     ];
 
     public static $quality = 85;
@@ -43,7 +43,7 @@ class Thumbnail
 
     public static $color = ['ffffff', 100];
 
-    public static $padding = [30,12];
+    public static $padding = [30, 12];
 
     public static $position = ['right', 'bottom'];
 
@@ -60,12 +60,12 @@ class Thumbnail
         }
         $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
 
-        if ($fileExtension) {
+        if ($fileExtension && $fileExtension != 'webp') {
             $thumbnailFileExt = '.' . $fileExtension;
         } else {
             $thumbnailFileExt = strrchr($filename, '.');
         }
-        $thumbnailFileName = md5($filename . $width . $height . $mode . $blurRadius . filemtime($filename));
+        $thumbnailFileName = md5($filename . $width . $height . $mode . $blurRadius . filemtime($filename) . ($fileExtension == 'webp' ? 'webp' : ''));
         $thumbnailFilePath = $cachePath . DIRECTORY_SEPARATOR . substr($thumbnailFileName, 0, 2);
         $thumbnailFile = $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . $thumbnailFileExt;
 
@@ -93,11 +93,11 @@ class Thumbnail
             $color = $palette->color(self::$color[0], self::$color[1]);
             $preserve = $imagine->create($box, $color);
             $startX = $startY = 0;
-            if ( $widthR < $width ) {
-                $startX = ( $width - $widthR ) / 2;
+            if ($widthR < $width) {
+                $startX = ($width - $widthR) / 2;
             }
-            if ( $heightR < $height ) {
-                $startY = ( $height - $heightR ) / 2;
+            if ($heightR < $height) {
+                $startY = ($height - $heightR) / 2;
             }
             $image = $preserve->paste($image, new Point($startX, $startY));
         } else {
@@ -130,7 +130,7 @@ class Thumbnail
                         $point[0] = $size->getWidth() - $wSize->getWidth() - self::$padding[0];
                         break;
                     case 'center':
-                        $point[0] = floor(($size->getWidth() - $wSize->getWidth())/2);
+                        $point[0] = floor(($size->getWidth() - $wSize->getWidth()) / 2);
                         break;
                     default:
                         $point[0] = self::$padding[0];
@@ -141,7 +141,7 @@ class Thumbnail
                         $point[1] = $size->getHeight() - $wSize->getHeight() - self::$padding[1];
                         break;
                     case 'center':
-                        $point[1] = floor(($size->getHeight() - $wSize->getHeight())/2);
+                        $point[1] = floor(($size->getHeight() - $wSize->getHeight()) / 2);
                         break;
                     default:
                         $point[1] = self::$padding[1];
@@ -214,7 +214,7 @@ class Thumbnail
     public static function thumbnailFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
-        $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
+        $cacheUrl = Yii::getAlias(self::$cashWebAlias . '/' . self::$cacheAlias);
         $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, $fileExtension);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
@@ -243,12 +243,29 @@ class Thumbnail
 
     public static function thumbnailWebpFileUrl($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0)
     {
+        $cacheUrl = Yii::getAlias(self::$cashWebAlias . '/' . self::$cacheAlias);
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
-        $cacheUrl = Yii::getAlias(self::$cashWebAlias .'/' . self::$cacheAlias);
+        if (!is_file($filename)) {
+            throw new FileNotFoundException("File $filename doesn't exist");
+        }
 
-        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius);
+        $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
+        $thumbnailFileName = md5($filename . $width . $height . $mode . $blurRadius . filemtime($filename) . 'webp');
+        $thumbnailFilePath = $cachePath . DIRECTORY_SEPARATOR . substr($thumbnailFileName, 0, 2);
+        $thumbnailWebpFile = $thumbnailFilePath . DIRECTORY_SEPARATOR . $thumbnailFileName . '.webp';
+        if (file_exists($thumbnailWebpFile)) {
+            if (self::$cacheExpire !== 0 && (time() - filemtime($thumbnailWebpFile)) > self::$cacheExpire) {
+                unlink($thumbnailWebpFile);
+            } else {
+                preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailWebpFile, $matches);
+                $fileName = $matches[0];
+                return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
+            }
+        }
+
+        $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, 'webp');
         $thumbnailWebpFilePath = self::thumbnailWebpFile($thumbnailFilePath);
-
+        FileHelper::unlink($thumbnailFilePath);
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailWebpFilePath, $matches);
         $fileName = $matches[0];
 
