@@ -265,7 +265,9 @@ class Thumbnail
 
         $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, 'webp');
         $thumbnailWebpFilePath = self::thumbnailWebpFile($thumbnailFilePath);
-        FileHelper::unlink($thumbnailFilePath);
+        if (file_exists($thumbnailWebpFile)) {
+            FileHelper::unlink($thumbnailFilePath);
+        }
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailWebpFilePath, $matches);
         $fileName = $matches[0];
 
