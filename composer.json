@@ -1,5 +1,5 @@
 {
-  "name": "aquy/yii2-thumbnail",
+  "name": "kesha-dev/yii2-thumbnail",
   "description": "Yii2 helper for creating and caching thumbnails on real time",
   "keywords": ["yii2", "thumbnail", "image", "helper"],
   "type": "yii2-extension",
