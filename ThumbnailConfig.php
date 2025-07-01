@@ -35,6 +35,8 @@ class ThumbnailConfig extends BaseObject
 
     public $color = ['ffffff', 100];
 
+    public $imagePlaceholder;
+
     public function init()
     {
         Thumbnail::$cashBaseAlias = $this->cashBaseAlias;
@@ -53,5 +55,6 @@ class ThumbnailConfig extends BaseObject
         Thumbnail::$quality = $this->quality;
         Thumbnail::$webpQuality = $this->webpQuality;
         Thumbnail::$color = $this->color;
+        Thumbnail::$imagePlaceholder = $this->imagePlaceholder;
     }
 }

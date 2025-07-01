@@ -47,6 +47,8 @@ class Thumbnail
 
     public static $position = ['right', 'bottom'];
 
+    public static $imagePlaceholder;
+
     public static function thumbnail($filename, $width, $height, $mode = self::THUMBNAIL_OUTBOUND, $isWatermark = false, $watermarkConfig = array(), $blurRadius = 0, $fileExtension = null)
     {
         return Image::getImagine()->open(self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius));
@@ -56,6 +58,9 @@ class Thumbnail
     {
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
+            if (isset(self::$imagePlaceholder)) {
+                return self::$imagePlaceholder;
+            }
             throw new FileNotFoundException("File $filename doesn't exist");
         }
         $cachePath = Yii::getAlias(self::$cashBaseAlias . '/' . self::$cacheAlias);
@@ -218,6 +223,11 @@ class Thumbnail
         $thumbnailFilePath = self::thumbnailFile($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, $fileExtension);
 
         preg_match('#[^\\' . DIRECTORY_SEPARATOR . ']+$#', $thumbnailFilePath, $matches);
+        if (!$matches) {
+            if (isset(self::$imagePlaceholder)) {
+                return self::$imagePlaceholder;
+            }
+        }
         $fileName = $matches[0];
 
         return $cacheUrl . '/' . substr($fileName, 0, 2) . '/' . $fileName;
@@ -229,6 +239,12 @@ class Thumbnail
         try {
             $thumbnailFileUrl = self::thumbnailFileUrl($filename, $width, $height, $mode, $isWatermark, $watermarkConfig, $blurRadius, $fileExtension);
         } catch (FileNotFoundException $e) {
+            if (isset(self::$imagePlaceholder)) {
+                return Html::img(
+                    self::$imagePlaceholder,
+                    $options
+                );
+            }
             return 'File doesn\'t exist';
         } catch (\Exception $e) {
             Yii::warning("{$e->getCode()}\n{$e->getMessage()}\n{$e->getFile()}");
@@ -246,6 +262,9 @@ class Thumbnail
         $cacheUrl = Yii::getAlias(self::$cashWebAlias . '/' . self::$cacheAlias);
         $filename = FileHelper::normalizePath(Yii::getAlias($filename));
         if (!is_file($filename)) {
+            if(isset(self::$imagePlaceholder)){
+                return self::$imagePlaceholder;
+            }
             throw new FileNotFoundException("File $filename doesn't exist");
         }
 
